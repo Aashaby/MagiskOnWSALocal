@@ -1,0 +1,46 @@
+name: 构建
+
+on:
+  workflow_dispatch:
+    inputs:
+      wsa_version:
+        description: 'WSA version (e.g. 2207.40000.8.0)'
+        required: true
+      wsa_arch:
+        description: 'WSA architecture (x64 or arm64)'
+        required: true
+        default: 'x64'
+      magisk_version:
+        description: 'Magisk version (e.g. stable, beta, canary)'
+        required: true
+        default: 'stable'
+      gapps_brand:
+        description: 'GApps brand (e.g. MindTheGapps)'
+        required: true
+        default: 'MindTheGapps'
+      root_solution:
+        description: 'Root solution (e.g. none, magisk, superuser)'
+        required: true
+        default: 'magisk'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lzip patchelf e2fsprogs python3 aria2 attr unzip whiptail qemu-utils python3-venv python3-pip p7zip-full
+          pip3 install requests
+      - name: Run script
+        run: |
+          ./scripts/run.sh --wsa-version ${{ github.event.inputs.wsa_version }} --wsa-arch ${{ github.event.inputs.wsa_arch }} --magisk-version ${{ github.event.inputs.magisk_version }} --gapps-brand ${{ github.event.inputs.gapps_brand }} --root-solution ${{ github.event.inputs.root_solution }} --compress-output
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: WSA-with-${{ github.event.inputs.root_solution }}-${{ github.event.inputs.gapps_brand }}_${{ github.event.inputs.wsa_version }}_${{ github.event.inputs.wsa_arch }}_Release-Nightly
+          path: output/*.7z
